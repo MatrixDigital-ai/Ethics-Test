@@ -1,6 +1,5 @@
 import { db } from '@/db';
 import { tests, questions } from '@/db/schema';
-import { eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import Groq from 'groq-sdk';
 
@@ -16,76 +15,96 @@ export async function GET() {
     }
 }
 
-// POST — Create a new test with AI-generated questions
+// POST — Two modes: "generate" (AI only, no DB) and "publish" (save to DB)
 export async function POST(req: Request) {
     try {
-        const { title, description, category, difficulty, questionCount } = await req.json();
+        const body = await req.json();
+        const { mode } = body;
 
-        // Step 1: Generate questions with Groq AI
-        const aiResponse = await groq.chat.completions.create({
-            model: 'llama-3.3-70b-versatile',
-            messages: [
-                {
-                    role: 'system',
-                    content: `You are an ethics assessment expert. Generate exactly ${questionCount || 5} multiple-choice ethics questions.
-Return ONLY a JSON array. Each object must have:
-- questionText: the question
-- scenario: a realistic workplace scenario
-- options: array of {id: "a"|"b"|"c"|"d", text: "..."}
-- correctAnswer: "a"|"b"|"c"|"d"
-- category: one of "Integrity", "Fairness", "Accountability", "Transparency", "Respect"
-- explanation: why the correct answer is best
-Return ONLY the JSON array, no markdown, no extra text.`,
-                },
-                {
-                    role: 'user',
-                    content: `Generate ${questionCount || 5} ethics questions about "${category || 'General Ethics'}" at "${difficulty || 'Medium'}" difficulty level. Make them realistic workplace scenarios.`,
-                },
-            ],
-            temperature: 0.7,
-            max_tokens: 4000,
-        });
+        // ─── MODE: GENERATE — AI generates questions, returns them for preview ───
+        if (mode === 'generate') {
+            const { title, category, difficulty, questionCount } = body;
 
-        const content = aiResponse.choices[0]?.message?.content || '[]';
-        // Try to parse JSON, handling potential markdown wrapping
-        let generatedQuestions;
-        try {
-            const cleaned = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-            generatedQuestions = JSON.parse(cleaned);
-        } catch {
-            generatedQuestions = [];
+            const aiResponse = await groq.chat.completions.create({
+                model: 'llama-3.3-70b-versatile',
+                messages: [
+                    {
+                        role: 'system',
+                        content: `You are a test question generator. Generate exactly ${questionCount || 5} multiple-choice questions.
+Return ONLY a valid JSON array. Each object must have these exact fields:
+- "questionText": string (the question)
+- "scenario": string (a realistic context/scenario for the question)
+- "options": array of exactly 4 objects, each with {"id": "a"|"b"|"c"|"d", "text": "string"}
+- "correctAnswer": "a"|"b"|"c"|"d"
+- "category": string (topic category)
+- "explanation": string (why the correct answer is right)
+Return ONLY the JSON array. No markdown, no text before or after, no code blocks.`,
+                    },
+                    {
+                        role: 'user',
+                        content: `Generate ${questionCount || 5} multiple-choice questions about "${category || 'General Knowledge'}" at "${difficulty || 'Medium'}" difficulty. Make them thoughtful and scenario-based.`,
+                    },
+                ],
+                temperature: 0.7,
+                max_tokens: 6000,
+            });
+
+            const content = aiResponse.choices[0]?.message?.content || '[]';
+            let generatedQuestions;
+            try {
+                const cleaned = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+                generatedQuestions = JSON.parse(cleaned);
+            } catch {
+                return NextResponse.json({ error: 'AI returned invalid JSON. Please try again.' }, { status: 422 });
+            }
+
+            if (!Array.isArray(generatedQuestions) || generatedQuestions.length === 0) {
+                return NextResponse.json({ error: 'AI did not generate any questions. Please try again.' }, { status: 422 });
+            }
+
+            // Return questions for preview — NOT saved to DB yet
+            return NextResponse.json({ questions: generatedQuestions });
         }
 
-        // Step 2: Create the test in DB
-        const [newTest] = await db.insert(tests).values({
-            title,
-            description,
-            category: category || 'General Ethics',
-            difficulty: difficulty || 'Medium',
-            totalQuestions: generatedQuestions.length || questionCount || 5,
-            timeLimit: 30,
-            status: 'active',
-        }).returning();
+        // ─── MODE: PUBLISH — Save test + questions to DB ───
+        if (mode === 'publish') {
+            const { title, description, category, difficulty, questionsList } = body;
 
-        // Step 3: Insert questions into DB
-        if (generatedQuestions.length > 0) {
+            if (!title || !questionsList || questionsList.length === 0) {
+                return NextResponse.json({ error: 'Title and questions are required' }, { status: 400 });
+            }
+
+            // Create the test
+            const [newTest] = await db.insert(tests).values({
+                title,
+                description: description || '',
+                category: category || 'General',
+                difficulty: difficulty || 'Medium',
+                totalQuestions: questionsList.length,
+                timeLimit: 30,
+                status: 'active',
+            }).returning();
+
+            // Insert questions
             await db.insert(questions).values(
-                generatedQuestions.map((q: any, i: number) => ({
+                questionsList.map((q: any, i: number) => ({
                     testId: newTest.id,
                     questionText: q.questionText,
                     scenario: q.scenario || '',
                     options: q.options,
                     correctAnswer: q.correctAnswer,
-                    category: q.category || category || 'General Ethics',
+                    category: q.category || category || 'General',
                     explanation: q.explanation || '',
                     orderIndex: i,
                 }))
             );
+
+            return NextResponse.json({ test: newTest, questionCount: questionsList.length });
         }
 
-        return NextResponse.json({ test: newTest, questionCount: generatedQuestions.length });
+        return NextResponse.json({ error: 'Invalid mode. Use "generate" or "publish".' }, { status: 400 });
     } catch (error: any) {
-        console.error('Create test error:', error);
+        console.error('Test API error:', error);
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }
