@@ -39,7 +39,7 @@ export default function LeaderboardPage() {
                 <h1 style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <Trophy size={28} style={{ color: '#F59E0B' }} /> Leaderboard
                 </h1>
-                <p>Top performers in ethics assessments</p>
+                <p>Top performers in assessments</p>
             </div>
 
             {/* Top 3 Podium */}

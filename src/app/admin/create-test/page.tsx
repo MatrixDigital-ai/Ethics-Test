@@ -119,7 +119,7 @@ export default function CreateTestPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                     <div className="input-group">
                         <label>Test Title *</label>
-                        <input className="input" placeholder="e.g., Q1 Ethics Assessment 2026" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+                        <input className="input" placeholder="e.g., Q1 Knowledge Assessment 2026" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
                     </div>
 
                     <div className="input-group">

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Shield, Mail, Lock } from 'lucide-react';
+import { GraduationCap, Mail, Lock } from 'lucide-react';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -37,8 +37,8 @@ export default function LoginPage() {
             <div className="auth-card animate-scaleIn">
                 <div className="auth-header">
                     <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 16, textDecoration: 'none', color: 'var(--primary)' }}>
-                        <Shield size={32} />
-                        <span style={{ fontSize: 24, fontWeight: 800, background: 'linear-gradient(135deg, var(--primary), var(--accent))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>EthicsIQ</span>
+                        <GraduationCap size={32} />
+                        <span style={{ fontSize: 24, fontWeight: 800, background: 'linear-gradient(135deg, var(--primary), var(--accent))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>TestIQ</span>
                     </Link>
                     <h1>Welcome Back</h1>
                     <p>Sign in to your account to continue</p>

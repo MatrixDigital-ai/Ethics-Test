@@ -146,7 +146,7 @@ export default function TestStartPage() {
                         <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), var(--accent))', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', boxShadow: '0 8px 32px rgba(99,102,241,0.3)' }}>
                             <Shield size={36} color="white" />
                         </div>
-                        <h1 style={{ fontSize: 32, fontWeight: 800, marginBottom: 12 }}>Ethics Assessment</h1>
+                        <h1 style={{ fontSize: 32, fontWeight: 800, marginBottom: 12 }}>Assessment</h1>
                         <p style={{ fontSize: 16, color: 'var(--text-secondary)', marginBottom: 32, maxWidth: 500, margin: '0 auto 32px' }}>
                             You will be presented with {questions.length} real-world ethical scenarios. Take your time to consider each situation carefully. Your results will be reviewed by the administration.
                         </p>
@@ -189,7 +189,7 @@ export default function TestStartPage() {
                         </div>
                         <div className="loading-spinner" />
                         <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>Submitting Your Responses</div>
-                        <div className="loading-text">Processing your ethics assessment...</div>
+                        <div className="loading-text">Processing your assessment...</div>
                     </div>
                 </div>
             </div>
@@ -220,7 +220,7 @@ export default function TestStartPage() {
                             Assessment Submitted Successfully!
                         </h1>
                         <p style={{ fontSize: 16, color: 'var(--text-secondary)', marginBottom: 12, maxWidth: 480, margin: '0 auto 12px', lineHeight: 1.7 }}>
-                            Thank you for completing the ethics assessment. Your responses have been recorded and will be reviewed by the administration team.
+                            Thank you for completing the assessment. Your responses have been recorded and will be reviewed by the administration team.
                         </p>
                         <p style={{ fontSize: 14, color: 'var(--text-tertiary)', marginBottom: 32, maxWidth: 480, margin: '0 auto 32px' }}>
                             You will not be able to view your results. Your manager or HR representative will follow up if needed.

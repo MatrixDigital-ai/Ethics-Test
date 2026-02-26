@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Shield, LayoutDashboard, LogOut, ChevronRight } from 'lucide-react';
+import { GraduationCap, LayoutDashboard, LogOut, ChevronRight } from 'lucide-react';
 import { signOut, useSession, SessionProvider } from 'next-auth/react';
 
 function EmployeeSidebar() {
@@ -17,12 +17,12 @@ function EmployeeSidebar() {
     return (
         <aside className="sidebar">
             <Link href="/" className="sidebar-logo">
-                <Shield size={24} />
-                <span>EthicsIQ</span>
+                <GraduationCap size={24} />
+                <span>TestIQ</span>
             </Link>
 
             <nav className="sidebar-nav">
-                <span className="sidebar-section-label">Employee Portal</span>
+                <span className="sidebar-section-label">My Portal</span>
                 {navItems.map((item) => (
                     <Link
                         key={item.href}

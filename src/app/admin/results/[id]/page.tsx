@@ -40,7 +40,7 @@ export default function ResultDetailPage({ params }: { params: Promise<{ id: str
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
         pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, Math.min(pdfHeight, pdf.internal.pageSize.getHeight()));
-        pdf.save(`EthicsIQ_${data.attempt.userName?.replace(/\s/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`);
+        pdf.save(`TestIQ_${data.attempt.userName?.replace(/\s/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`);
     };
 
     if (loading) {
@@ -196,7 +196,7 @@ export default function ResultDetailPage({ params }: { params: Promise<{ id: str
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
                     <div style={{ width: 40, height: 40, borderRadius: 8, background: 'linear-gradient(135deg, #6366F1, #8B5CF6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: 18 }}>E</div>
                     <div>
-                        <div style={{ fontSize: 22, fontWeight: 800 }}>EthicsIQ — Assessment Report</div>
+                        <div style={{ fontSize: 22, fontWeight: 800 }}>TestIQ — Assessment Report</div>
                         <div style={{ fontSize: 11, color: '#94A3B8' }}>Generated on {new Date().toLocaleDateString()}</div>
                     </div>
                 </div>
@@ -225,7 +225,7 @@ export default function ResultDetailPage({ params }: { params: Promise<{ id: str
                         <strong>AI Summary:</strong> {analysis.summary}
                     </div>
                 )}
-                <div style={{ fontSize: 11, color: '#94A3B8', textAlign: 'center', marginTop: 20 }}>EthicsIQ — AI-Powered Ethics Assessment Platform</div>
+                <div style={{ fontSize: 11, color: '#94A3B8', textAlign: 'center', marginTop: 20 }}>TestIQ — AI-Powered Test Taking Platform</div>
             </div>
         </div>
     );

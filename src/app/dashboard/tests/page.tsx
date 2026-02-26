@@ -56,7 +56,7 @@ export default function TestsPage() {
             <div className="page-header page-header-actions">
                 <div>
                     <h1>Ethics Tests</h1>
-                    <p>Create and manage AI-generated ethics assessments</p>
+                    <p>Create and manage AI-generated assessments</p>
                 </div>
                 <button className="btn btn-primary" onClick={() => setShowCreateModal(true)}>
                     <Plus size={16} /> Create AI Test

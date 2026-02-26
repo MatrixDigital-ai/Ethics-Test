@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Shield, LayoutDashboard, ClipboardList, FileText, LogOut, ChevronRight } from 'lucide-react';
+import { GraduationCap, LayoutDashboard, ClipboardList, FileText, LogOut, ChevronRight } from 'lucide-react';
 import { signOut, useSession, SessionProvider } from 'next-auth/react';
 
 function AdminSidebar() {
@@ -19,8 +19,8 @@ function AdminSidebar() {
     return (
         <aside className="sidebar">
             <Link href="/" className="sidebar-logo">
-                <Shield size={24} />
-                <span>EthicsIQ</span>
+                <GraduationCap size={24} />
+                <span>TestIQ</span>
             </Link>
 
             <nav className="sidebar-nav">

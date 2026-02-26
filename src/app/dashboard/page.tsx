@@ -38,7 +38,7 @@ export default function EmployeeDashboardPage() {
         <div>
             <div className="page-header">
                 <h1>Welcome{session?.user?.name ? `, ${session.user.name}` : ''}</h1>
-                <p>Select an ethics assessment to begin</p>
+                <p>Select a test to begin</p>
             </div>
 
             {/* Info Banner */}

@@ -59,7 +59,7 @@ export default function EmployeesPage() {
         <div>
             <div className="page-header">
                 <h1>Employee Management</h1>
-                <p>Track and manage employee ethics assessments</p>
+                <p>Track and manage employee assessments</p>
             </div>
 
             <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
