@@ -38,6 +38,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
                 id: attemptAnswers.id,
                 selectedAnswer: attemptAnswers.selectedAnswer,
                 isCorrect: attemptAnswers.isCorrect,
+                justification: attemptAnswers.justification,
                 questionText: questions.questionText,
                 scenario: questions.scenario,
                 options: questions.options,

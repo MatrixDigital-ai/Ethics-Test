@@ -76,6 +76,7 @@ export const attemptAnswers = pgTable('attempt_answers', {
     questionId: uuid('question_id').references(() => questions.id, { onDelete: 'cascade' }).notNull(),
     selectedAnswer: varchar('selected_answer', { length: 10 }).notNull(),
     isCorrect: boolean('is_correct').default(false),
+    justification: text('justification'), // Written reasoning by the test taker
     timeTaken: integer('time_taken'), // seconds per question
 });
 
