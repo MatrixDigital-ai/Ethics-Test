@@ -57,3 +57,16 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }
+
+// DELETE /api/attempts/[id] — Delete an attempt and related data
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
+    try {
+        const { id } = await params;
+        await db.delete(attemptAnswers).where(eq(attemptAnswers.attemptId, id));
+        await db.delete(ethicsScores).where(eq(ethicsScores.attemptId, id));
+        await db.delete(testAttempts).where(eq(testAttempts.id, id));
+        return NextResponse.json({ success: true });
+    } catch (error: any) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+}

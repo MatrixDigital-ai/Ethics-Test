@@ -1,6 +1,6 @@
 import { db } from '@/db';
 import { testAttempts, attemptAnswers, ethicsScores, questions, tests, users } from '@/db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, and } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import Groq from 'groq-sdk';
 
@@ -46,6 +46,15 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
     try {
         const { testId, userId, answers, timeTaken } = await req.json();
+
+        // ── Duplicate prevention: reject if user already took this test ──
+        const [duplicate] = await db.select({ id: testAttempts.id })
+            .from(testAttempts)
+            .where(and(eq(testAttempts.userId, userId), eq(testAttempts.testId, testId)));
+
+        if (duplicate) {
+            return NextResponse.json({ error: 'You have already taken this test.' }, { status: 409 });
+        }
 
         // Create attempt
         const [attempt] = await db.insert(testAttempts).values({
