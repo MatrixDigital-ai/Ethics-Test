@@ -2,16 +2,18 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Shield, LayoutDashboard, LogOut, ChevronRight } from 'lucide-react';
+import { Shield, LayoutDashboard, ClipboardList, FileText, LogOut, ChevronRight } from 'lucide-react';
 import { signOut, useSession, SessionProvider } from 'next-auth/react';
 
-function EmployeeSidebar() {
+function AdminSidebar() {
     const pathname = usePathname();
     const { data: session } = useSession();
-    const userName = session?.user?.name || 'Employee';
+    const userName = session?.user?.name || 'Admin';
 
     const navItems = [
-        { href: '/dashboard', icon: LayoutDashboard, label: 'Available Tests' },
+        { href: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
+        { href: '/admin/create-test', icon: ClipboardList, label: 'Create Test' },
+        { href: '/admin/results', icon: FileText, label: 'Test Results' },
     ];
 
     return (
@@ -22,7 +24,7 @@ function EmployeeSidebar() {
             </Link>
 
             <nav className="sidebar-nav">
-                <span className="sidebar-section-label">Employee Portal</span>
+                <span className="sidebar-section-label">Admin Panel</span>
                 {navItems.map((item) => (
                     <Link
                         key={item.href}
@@ -42,7 +44,7 @@ function EmployeeSidebar() {
                 </div>
                 <div className="sidebar-user-info">
                     <div className="sidebar-user-name">{userName}</div>
-                    <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>Employee</span>
+                    <span className="badge badge-primary" style={{ padding: '2px 6px', fontSize: 10 }}>Admin</span>
                 </div>
                 <button
                     onClick={() => signOut({ callbackUrl: '/login' })}
@@ -57,11 +59,11 @@ function EmployeeSidebar() {
     );
 }
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
     return (
         <SessionProvider>
             <div className="dashboard-layout">
-                <EmployeeSidebar />
+                <AdminSidebar />
                 <main className="main-content">
                     {children}
                 </main>
