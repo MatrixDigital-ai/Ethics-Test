@@ -1,12 +1,13 @@
-import { db } from '@/db';
+import { db, sqlClient } from '@/db';
 import { testAttempts, attemptAnswers, ethicsScores, questions, tests, users } from '@/db/schema';
 import { eq, desc, and } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import Groq from 'groq-sdk';
+import { randomUUID } from 'crypto';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-// GET — List all attempts
+// GET — List all attempts (only completed ones with scores)
 export async function GET(req: Request) {
     try {
         const { searchParams } = new URL(req.url);
@@ -30,6 +31,7 @@ export async function GET(req: Request) {
             .from(testAttempts)
             .innerJoin(users, eq(testAttempts.userId, users.id))
             .innerJoin(tests, eq(testAttempts.testId, tests.id))
+            .where(eq(testAttempts.status, 'completed'))
             .orderBy(desc(testAttempts.completedAt));
 
         const filtered = userId ? allAttempts.filter(a => a.userEmail === userId || a.userName === userId) : allAttempts;
@@ -44,26 +46,46 @@ export async function POST(req: Request) {
     try {
         const { testId, userId, answers, timeTaken } = await req.json();
 
-        // Duplicate prevention
-        const [duplicate] = await db.select({ id: testAttempts.id })
+        if (!userId || !testId) {
+            return NextResponse.json({ error: 'Missing required fields (userId, testId).' }, { status: 400 });
+        }
+
+        // Duplicate prevention — allow retry if previous attempt has no score (incomplete)
+        const existingAttempts = await db.select({ id: testAttempts.id, score: testAttempts.score })
             .from(testAttempts)
             .where(and(eq(testAttempts.userId, userId), eq(testAttempts.testId, testId)));
 
-        if (duplicate) {
-            return NextResponse.json({ error: 'You have already taken this test.' }, { status: 409 });
+        if (existingAttempts.length > 0) {
+            const completedWithScore = existingAttempts.find(a => a.score !== null);
+            if (completedWithScore) {
+                return NextResponse.json({ error: 'You have already taken this test.' }, { status: 409 });
+            }
+            // Clean up incomplete/failed attempts so user can retry
+            for (const a of existingAttempts) {
+                await db.delete(attemptAnswers).where(eq(attemptAnswers.attemptId, a.id));
+                await db.delete(ethicsScores).where(eq(ethicsScores.attemptId, a.id));
+                await db.delete(testAttempts).where(eq(testAttempts.id, a.id));
+            }
         }
 
-        // Create attempt
-        const [attempt] = await db.insert(testAttempts).values({
-            userId,
-            testId,
-            status: 'completed',
-            completedAt: new Date(),
-            totalTimeTaken: timeTaken || 0,
-        }).returning();
+        // Create attempt as in_progress — only mark completed after full processing
+        // Use raw SQL tagged template — Neon HTTP driver handles types correctly this way
+        const attemptId = randomUUID();
+        const now = new Date().toISOString();
+        await sqlClient`
+            INSERT INTO test_attempts (id, user_id, test_id, started_at, completed_at, score, status, ai_analysis, total_time_taken)
+            VALUES (${attemptId}, ${userId}, ${testId}, ${now}, ${null}, ${null}, ${'in_progress'}, ${null}, ${timeTaken || 0})
+        `;
+        const attempt = { id: attemptId };
 
         // Fetch questions
         const testQuestions = await db.select().from(questions).where(eq(questions.testId, testId)).orderBy(questions.orderIndex);
+
+        if (!testQuestions || testQuestions.length === 0) {
+            // Clean up the empty attempt
+            await db.delete(testAttempts).where(eq(testAttempts.id, attempt.id));
+            return NextResponse.json({ error: 'No questions found for this test.' }, { status: 400 });
+        }
 
         // Score answers and build detailed analysis input
         let correctCount = 0;
@@ -100,14 +122,13 @@ export async function POST(req: Request) {
                 explanation: q.explanation,
             });
 
-            // Save answer with justification
-            await db.insert(attemptAnswers).values({
-                attemptId: attempt.id,
-                questionId: q.id,
-                selectedAnswer: userAnswer,
-                isCorrect,
-                justification: justification || null,
-            });
+            // Save answer with justification using raw SQL tagged template
+            const answerId = randomUUID();
+            const justText = justification && justification.trim() ? justification.trim() : null;
+            await sqlClient`
+                INSERT INTO attempt_answers (id, attempt_id, question_id, selected_answer, is_correct, justification, time_taken)
+                VALUES (${answerId}, ${attempt.id}, ${q.id}, ${userAnswer || ''}, ${isCorrect}, ${justText}, ${null})
+            `;
         }
 
         const overallScore = Math.round((correctCount / testQuestions.length) * 100);
@@ -201,19 +222,21 @@ ${detailedAnswers.map(a => `Q${a.questionNumber}: "${a.question}"
             };
         }
 
-        // Update attempt with score and analysis
+        // Update attempt with score, analysis, and mark as completed
         await db.update(testAttempts).set({
             score: overallScore,
             aiAnalysis,
+            status: 'completed',
+            completedAt: new Date(),
         }).where(eq(testAttempts.id, attempt.id));
 
-        // Save ethics scores
-        await db.insert(ethicsScores).values({
-            userId,
-            attemptId: attempt.id,
-            ...ethicsDims,
-            overallScore,
-        });
+        // Save ethics scores using raw SQL tagged template
+        const scoreId = randomUUID();
+        const scoreNow = new Date().toISOString();
+        await sqlClient`
+            INSERT INTO ethics_scores (id, user_id, attempt_id, integrity, fairness, accountability, transparency, respect, overall_score, created_at)
+            VALUES (${scoreId}, ${userId}, ${attempt.id}, ${ethicsDims.integrity}, ${ethicsDims.fairness}, ${ethicsDims.accountability}, ${ethicsDims.transparency}, ${ethicsDims.respect}, ${overallScore}, ${scoreNow})
+        `;
 
         return NextResponse.json({ attemptId: attempt.id, score: overallScore });
     } catch (error: any) {

@@ -17,6 +17,7 @@ function TestContent({ testId }: { testId: string }) {
     const [justifications, setJustifications] = useState<Record<number, string>>({});
     const [timeLeft, setTimeLeft] = useState(0);
     const [error, setError] = useState('');
+    const [submitError, setSubmitError] = useState('');
 
     useEffect(() => {
         const loadTest = async () => {
@@ -62,9 +63,14 @@ function TestContent({ testId }: { testId: string }) {
 
     const handleSubmit = async () => {
         setPhase('submitting');
+        setSubmitError('');
         try {
             const userId = (session?.user as any)?.id;
-            if (!userId) throw new Error('Not logged in');
+            if (!userId) {
+                setSubmitError('You must be logged in to submit. Please refresh the page and log in again.');
+                setPhase('testing');
+                return;
+            }
 
             const res = await fetch('/api/attempts', {
                 method: 'POST',
@@ -83,14 +89,17 @@ function TestContent({ testId }: { testId: string }) {
 
             if (!res.ok) {
                 const data = await res.json();
-                setError(data.error || 'Submission failed');
-                setPhase('intro');
+                setSubmitError(data.error || 'Submission failed. Please try again.');
+                setPhase('testing');
                 return;
             }
-        } catch (err) {
-            console.error(err);
+
+            setPhase('submitted');
+        } catch (err: any) {
+            console.error('Submit error:', err);
+            setSubmitError(err.message || 'Submission failed. Please check your connection and try again.');
+            setPhase('testing');
         }
-        setPhase('submitted');
     };
 
     if (phase === 'loading') {
@@ -203,6 +212,13 @@ function TestContent({ testId }: { testId: string }) {
                     </div>
                     <div className="test-progress-text">{currentQ + 1}/{questions.length}</div>
                 </div>
+
+                {submitError && (
+                    <div style={{ padding: '12px 16px', background: '#FEF2F2', borderRadius: 8, border: '1px solid #FECACA', marginBottom: 16, color: '#DC2626', fontSize: 14, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <span style={{ fontSize: 18 }}>⚠️</span>
+                        <span>{submitError}</span>
+                    </div>
+                )}
 
                 <AnimatePresence mode="wait">
                     <motion.div key={currentQ} className="test-question-card" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3 }}>
